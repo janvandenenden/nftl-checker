@@ -19,14 +19,116 @@ This step-by-step guide is designed for an AI developer working iteratively and 
 
 ---
 
-### **Phase 2: Define Core Smart Contract Interaction (Backend Functionality)**
+### **Phase 2: Fetch NFT Data from OpenSea API**
+
+- **Objective:** Implement data fetching from OpenSea and prepare the API route.
+
+1. Implement `/api/nfts` route to fetch NFT data from OpenSea API.
+2. Ensure the route fetches NFT ID, image, price, tribe, and marketplace links.
+3. **Test:** Verify data is fetched correctly and rate-limited.
+4. **Commit:** `"feat: added OpenSea NFT data endpoint"`
+
+```async function fetchOpenSeaListings(): Promise<NFT[]> {
+  const apiKey = process.env.NEXT_PUBLIC_OPENSEA;
+  console.log("apiKey", apiKey);
+  if (!apiKey) {
+    throw new Error("OpenSea API key is not defined");
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.opensea.io/api/v2/listings/collection/${process.env.NEXT_PUBLIC_COLLECTION_SLUG}/all?limit=100`,
+      {
+        headers: { "X-API-KEY": apiKey as string },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch data from OpenSea");
+    }
+
+    const data = await response.json();
+    return data.listings.map((listing: any) => ({
+      priceInETH:
+        listing.price.current.value /
+        Math.pow(10, listing.price.current.decimals),
+      tokenId: listing.protocol_data.parameters.offer[0].identifierOrCriteria,
+      openseaLink: `https://opensea.io/assets/ethereum/0x986aea67c7d6a15036e18678065eb663fc5be883/${listing.protocol_data.parameters.offer[0].identifierOrCriteria}`,
+      blurLink: `https://blur.io/assets/ethereum/0x986aea67c7d6a15036e18678065eb663fc5be883/${listing.protocol_data.parameters.offer[0].identifierOrCriteria}`,
+    }));
+  } catch (error) {
+    console.error("Error fetching OpenSea listings:", error);
+    return [];
+  }
+}
+```
+
+### **Phase 3: Define Core Smart Contract Interaction (Backend Functionality)**
 
 - **Objective:** Test the core functionality for retrieving claimable NFTL from the smart contract before building the UI.
 
-1. Implement `/api/claimable-nftl` route in `pages/api/claimable-nftl.ts`.
+1. Fetch use
 2. Use `viem` and `wagmi` to fetch claimable NFTL from the smart contract.
 3. **Test:** Confirm that calling the endpoint with an NFT ID returns the correct claimable NFTL amount.
 4. **Commit:** After successful test, commit changes with the message: `"feat: added smart contract interaction endpoint"`
+
+set up wagmi config.ts
+
+import { http, createConfig } from 'wagmi'
+import { mainnet, sepolia } from 'wagmi/chains'
+
+export const config = createConfig({
+chains: [mainnet, sepolia],
+transports: {
+[mainnet.id]: http(),
+[sepolia.id]: http(),
+},
+})
+
+set up tanstack query
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
+import { config } from './config'
+
+const queryClient = new QueryClient()
+
+function App() {
+return (
+<WagmiProvider config={config}>
+<QueryClientProvider client={queryClient}>
+{/\*_ ... _/}
+</QueryClientProvider>
+</WagmiProvider>
+)
+}
+
+Example of using wagmi
+
+import { useAccount, useEnsName } from 'wagmi'
+
+export function Profile() {
+const { address } = useAccount()
+const { data, error, status } = useEnsName({ address })
+if (status === 'pending') return <div>Loading ENS name</div>
+if (status === 'error')
+return <div>Error fetching ENS name: {error.message}</div>
+return <div>ENS name: {data}</div>
+}
+
+Example useReadContract
+
+import { useReadContract } from 'wagmi'
+import { abi } from './abi'
+
+function App() {
+const result = useReadContract({
+abi,
+address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+functionName: 'totalSupply',
+})
+}
 
 ```const abi = [
   {
@@ -37,46 +139,6 @@ This step-by-step guide is designed for an AI developer working iteratively and 
     type: "function",
   },
 ];
-```
-
----
-
-### **Phase 3: Fetch NFT Data from OpenSea API**
-
-- **Objective:** Implement data fetching from OpenSea and prepare the API route.
-
-1. Implement `/api/nfts` route to fetch NFT data from OpenSea API.
-2. Ensure the route fetches NFT ID, image, price, tribe, and marketplace links.
-3. **Test:** Verify data is fetched correctly and rate-limited.
-4. **Commit:** `"feat: added OpenSea NFT data endpoint"`
-
-```async function fetchListings(cursor: string | null) {
-    let url = `https://api.opensea.io/api/v2/listings/collection/${collectionSlug}/all?limit=100`;
-    if (cursor) {
-      url += `&next=${cursor}`;
-    }
-
-    const response = await fetch(url, {
-      headers: { "X-API-KEY": apiKey as string },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch data from OpenSea");
-    }
-
-    const data = await response.json();
-    const processedListings = data.listings.map((listing: any) => ({
-      priceInETH:
-        listing.price.current.value /
-        Math.pow(10, listing.price.current.decimals),
-      tokenId: listing.protocol_data.parameters.offer[0].identifierOrCriteria,
-    }));
-
-    listings = listings.concat(processedListings);
-    if (data.next) {
-      await fetchListings(data.next);
-    }
-  }
 ```
 
 ---
