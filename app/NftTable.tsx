@@ -13,8 +13,6 @@ import {
   getFilteredRowModel,
   ColumnFiltersState,
   PaginationState,
-  PaginationOptions,
-  PaginationInstance,
 } from "@tanstack/react-table";
 import {
   HoverCard,

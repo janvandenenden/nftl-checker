@@ -2,16 +2,17 @@
 
 import { useAccumulatedNFTL } from "../hooks/useAccumulatedNFTL";
 import NftTable from "./NftTable";
-import { Listing, NFT } from "../types";
+import { NFT } from "../types";
 import Image from "next/image";
 export default function NftTableWrapper({
   listings,
   nftlPrice,
-  offers,
-}: {
+}: //   offers,
+{
   listings: NFT[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nftlPrice: any;
-  offers: any;
+  //   offers: any;
 }) {
   const tokenIds = listings.map((nft) => Number(nft.tokenId));
   const { data, error, isLoading } = useAccumulatedNFTL(tokenIds);

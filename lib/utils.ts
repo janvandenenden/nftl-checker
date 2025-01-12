@@ -76,10 +76,22 @@ export async function fetchNFTL(): Promise<number> {
   const data = await response.json();
   return data;
 }
-
-export async function fetchOpenSeaCollectionOffers(
-  next?: string
-): Promise<NFT[]> {
+interface OpenSeaOffer {
+  criteria: {
+    trait: string | null;
+    encoded_token_ids: string;
+  };
+  price: {
+    value: string;
+    decimals: number;
+  };
+  protocol_data: {
+    parameters: {
+      endTime: string;
+    };
+  };
+}
+export async function fetchOpenSeaCollectionOffers(): Promise<NFT[]> {
   const apiKey = process.env.NEXT_PUBLIC_OPENSEA;
   if (!apiKey) {
     throw new Error("OpenSea API key is not defined");
@@ -95,11 +107,11 @@ export async function fetchOpenSeaCollectionOffers(
     }
     const data = await response.json();
     const validOffers = data.offers.filter(
-      (offer: any) =>
+      (offer: OpenSeaOffer) =>
         offer.criteria.trait === null &&
         offer.criteria.encoded_token_ids === "*"
     );
-    const offers = validOffers.map((offer: any) => ({
+    const offers = validOffers.map((offer: OpenSeaOffer) => ({
       priceInWETH:
         Number(offer.price.value) / Math.pow(10, offer.price.decimals),
       validUntil: new Date(
