@@ -163,8 +163,7 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Bonk Score Explained</h3>
               <p className="text-sm text-muted-foreground">
-                The Bonk Score helps you identify potentially undervalued
-                Degens.
+                The Bonk Score helps you identify undervalued Degens.
               </p>
               <div className="p-3 bg-muted rounded-lg">
                 <code>Bonk Score = NFTL Value in USD / List Price in USD</code>
