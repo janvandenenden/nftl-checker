@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Listing, NFT } from "../types";
+import { Listing, NFT, ReservoirListing, OpenSeaOffer } from "../types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -48,6 +48,83 @@ export async function fetchOpenSeaListings(next?: string): Promise<NFT[]> {
   }
 }
 
+export async function fetchReservoirListings(): Promise<NFT[]> {
+  const apiKey = process.env.NEXT_PUBLIC_RESERVOIR_API_KEY;
+  if (!apiKey) {
+    throw new Error("Reservoir API key is not defined");
+  }
+  const options = {
+    method: "GET",
+    headers: { accept: "*/*", "x-api-key": apiKey },
+  };
+
+  const response = await fetch(
+    `https://api.reservoir.tools/orders/asks/v5?contracts=${process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS}&limit=1000`,
+    options
+  );
+  const data = await response.json();
+
+  const listings = Array.isArray(data.orders)
+    ? data.orders
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((order: any) => order.status === "active")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((order: any) => order.side === "sell")
+        .map((listing: ReservoirListing) => {
+          const tokenId = listing.tokenSetId?.split(":")[2] ?? "0";
+          return {
+            priceInETH: listing.price?.amount?.native ?? 0,
+            tokenId,
+            nftl: 0,
+            openseaLink: `https://opensea.io/assets/ethereum/0x986aea67c7d6a15036e18678065eb663fc5be883/${tokenId}`,
+            blurLink: `https://blur.io/eth/asset/0x986aea67c7d6a15036e18678065eb663fc5be883/${tokenId}`,
+            imageUrl: `https://app.niftyleague.com/img/degens/nfts/${tokenId}.webp`,
+          };
+        })
+    : [];
+
+  const uniqueListings = Object.values(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listings?.reduce((acc: { [key: string]: NFT }, curr: any) => {
+      if (
+        !acc[curr.tokenId] ||
+        acc[curr.tokenId].priceInETH > curr.priceInETH
+      ) {
+        acc[curr.tokenId] = curr;
+      }
+      return acc;
+    }, {})
+  );
+
+  return uniqueListings as NFT[];
+}
+
+export async function fetchReservoirCollectionOffers(
+  next?: string
+): Promise<ReservoirListing[]> {
+  const apiKey = process.env.NEXT_PUBLIC_RESERVOIR_API_KEY;
+  if (!apiKey) {
+    throw new Error("Reservoir API key is not defined");
+  }
+  const options = {
+    method: "GET",
+    headers: { accept: "*/*", "x-api-key": apiKey },
+  };
+  const response = await fetch(
+    `https://api.reservoir.tools/collections/${
+      process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS
+    }/bids/v1?type=collection${next ? `&continuation=${next}` : ""}`,
+    options
+  );
+  const data = await response.json();
+
+  if (data.continuation) {
+    const nextOrders = await fetchReservoirCollectionOffers(data.continuation);
+    return [...data.orders, ...nextOrders];
+  }
+  return data.orders;
+}
+
 export async function fetchNFTL(): Promise<number> {
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
   if (!apiKey) {
@@ -76,21 +153,7 @@ export async function fetchNFTL(): Promise<number> {
   const data = await response.json();
   return data;
 }
-interface OpenSeaOffer {
-  criteria: {
-    trait: string | null;
-    encoded_token_ids: string;
-  };
-  price: {
-    value: string;
-    decimals: number;
-  };
-  protocol_data: {
-    parameters: {
-      endTime: string;
-    };
-  };
-}
+
 export async function fetchOpenSeaCollectionOffers(): Promise<NFT[]> {
   const apiKey = process.env.NEXT_PUBLIC_OPENSEA;
   if (!apiKey) {
@@ -106,7 +169,7 @@ export async function fetchOpenSeaCollectionOffers(): Promise<NFT[]> {
       throw new Error("Failed to fetch data from OpenSea");
     }
     const data = await response.json();
-    const validOffers = data.offers.filter(
+    const validOffers = data.offers?.filter(
       (offer: OpenSeaOffer) =>
         offer.criteria.trait === null &&
         offer.criteria.encoded_token_ids === "*"

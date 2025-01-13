@@ -2,20 +2,38 @@
 
 import { useAccumulatedNFTL } from "../hooks/useAccumulatedNFTL";
 import NftTable from "./NftTable";
-import { NFT } from "../types";
+import { NFT, ReservoirListing } from "../types";
 import Image from "next/image";
 export default function NftTableWrapper({
-  listings,
   nftlPrice,
-}: //   offers,
-{
-  listings: NFT[];
+  reservoirListings,
+  reservoirCollectionOffers,
+}: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nftlPrice: any;
-  //   offers: any;
+  reservoirListings: NFT[];
+  reservoirCollectionOffers: ReservoirListing[];
 }) {
-  const tokenIds = listings.map((nft) => Number(nft.tokenId));
-  const { data, error, isLoading } = useAccumulatedNFTL(tokenIds);
+  const reservoirTokenIds = reservoirListings.map((nft) => Number(nft.tokenId));
+  const validCollectionOffers = reservoirCollectionOffers
+    ?.filter((offer) => {
+      const sixHoursFromNow = Date.now() / 1000 + 6 * 60 * 60;
+      return offer.validUntil > sixHoursFromNow;
+    })
+    .map((offer) => ({
+      priceInETH: offer.price.netAmount.native,
+      priceInUSD: offer.price.netAmount.usd,
+      source: offer.source.name,
+      expiration: new Date(offer.validUntil * 1000).toLocaleString(),
+    }))
+    .sort((a, b) => b.priceInETH - a.priceInETH);
+
+  const highestCollectionOfferInUSD = Math.max(
+    ...validCollectionOffers.map(
+      (collectionOffer) => collectionOffer.priceInUSD
+    )
+  );
+  const { data, error, isLoading } = useAccumulatedNFTL(reservoirTokenIds);
   if (isLoading)
     return (
       <div className="flex flex-col justify-center items-center h-screen">
@@ -24,8 +42,7 @@ export default function NftTableWrapper({
       </div>
     );
   if (error) return <div>Error: {error.message}</div>;
-
-  const enrichedNfts = listings.map((listing, index) => {
+  const enrichedNfts = reservoirListings.map((listing, index) => {
     return {
       ...listing,
       nftl:
@@ -36,14 +53,21 @@ export default function NftTableWrapper({
         Number((data?.[index]?.result as bigint) / BigInt(10 ** 18)) *
         nftlPrice.data[0].prices[0].value,
       priceInUSD: listing.priceInETH * nftlPrice.data[1].prices[0].value,
-      valueScore: (
-        ((Number((data?.[index]?.result as bigint) / BigInt(10 ** 18)) *
-          nftlPrice.data[0].prices[0].value) /
-          (listing.priceInETH * nftlPrice.data[1].prices[0].value)) *
-        100
+      valueScore: (data?.[index]?.result === BigInt(0)
+        ? 0
+        : ((Number((data?.[index]?.result as bigint) / BigInt(10 ** 18)) *
+            nftlPrice.data[0].prices[0].value +
+            highestCollectionOfferInUSD) /
+            (listing.priceInETH * nftlPrice.data[1].prices[0].value)) *
+          100
       ).toFixed(1),
     };
   });
 
-  return <NftTable data={enrichedNfts} />;
+  return (
+    <NftTable
+      data={enrichedNfts}
+      highestCollectionOfferInUSD={highestCollectionOfferInUSD}
+    />
+  );
 }

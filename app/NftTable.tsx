@@ -37,9 +37,13 @@ import { Separator } from "@/components/ui/separator";
 
 interface NFTTableProps {
   data: NFT[];
+  highestCollectionOfferInUSD: number;
 }
 
-const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
+const NFTTable: React.FC<NFTTableProps> = ({
+  data,
+  highestCollectionOfferInUSD,
+}) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -57,10 +61,15 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
     [data]
   );
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    {
+      id: "valueScore",
+      desc: true,
+    },
+  ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [priceFilter, setPriceFilter] = useState([0, maxPrice]);
-  const [nftlFilter, setNftlFilter] = useState([0, maxNftl]);
+  const [nftlFilter, setNftlFilter] = useState([1000, maxNftl]);
 
   const columns: ColumnDef<NFT>[] = [
     {
@@ -166,11 +175,14 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
                 The Bonk Score helps you identify undervalued Degens.
               </p>
               <div className="p-3 bg-muted rounded-lg">
-                <code>Bonk Score = NFTL Value in USD / List Price in USD</code>
+                <code>
+                  Bonk Score = (NFTL Value in USD + Highest Collection Offer in
+                  USD) / List Price in USD
+                </code>
               </div>
               <p className="text-sm text-muted-foreground">
-                A score above 100 indicates the claimable NFTL value exceeds the
-                listing price.
+                A score above 100 indicates the claimable NFTL value + the
+                NFT&apos;s resell value exceeds the listing price.
               </p>
             </div>
           </HoverCardContent>
@@ -254,7 +266,6 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
   }, [priceFilter, table]);
   const metricsData = {
     degensForSale: data.length,
-    totalNftlToClaim: 50000,
   };
 
   return (
@@ -268,14 +279,13 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
                 <br /> Unclaimed NFTL
               </h1>
               <p className="">
-                Explore Degens listed on OpenSea and check how much NFTL they
-                can claim.
+                Explore listed Degens and check how much NFTL they can claim.
               </p>
               <Separator className="my-4 bg-slate-500" />
               <div className="flex flex-row items-center w-full justify-center md:justify-start space-x-4 py-4 w-full overflow-x-auto">
                 <div className="flex flex-col justify-start min-w-[60px]">
-                  <span className="text-sm font-medium ">Degens for Sale</span>
-                  <span className="text-lg font-bold">
+                  <span className="text-xs font-medium">Degens for Sale</span>
+                  <span className="text-sm md:text-lg font-bold">
                     {metricsData.degensForSale.toLocaleString()}
                   </span>
                 </div>
@@ -284,11 +294,23 @@ const NFTTable: React.FC<NFTTableProps> = ({ data }) => {
                   className="h-12 bg-slate-500"
                 />
                 <div className="flex flex-col min-w-[60px]">
-                  <span className="text-sm font-medium">
+                  <span className="text-xs font-medium">
                     Total unclaimed NFTL
                   </span>
-                  <span className="text-lg font-bold">
+                  <span className="text-sm md:text-lg font-bold">
                     {totalNFTL.toLocaleString()} NFTL
+                  </span>
+                </div>
+                <Separator
+                  orientation="vertical"
+                  className="h-12 bg-slate-500"
+                />
+                <div className="flex flex-col min-w-[60px]">
+                  <span className="text-xs font-medium">
+                    Highest Collection Offer
+                  </span>
+                  <span className="text-sm md:text-lg font-bold">
+                    ${highestCollectionOfferInUSD.toLocaleString()}
                   </span>
                 </div>
               </div>
