@@ -31,7 +31,6 @@ import {
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowUpIcon, ArrowDownIcon, InfoIcon } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
 import { NFT } from "../types";
 import { Separator } from "@/components/ui/separator";
 
@@ -284,7 +283,12 @@ const NFTTable: React.FC<NFTTableProps> = ({
               <Separator className="my-4 bg-slate-500" />
               <div className="flex flex-row items-center w-full justify-center md:justify-start space-x-4 py-4 w-full overflow-x-auto">
                 <div className="flex flex-col justify-start min-w-[60px]">
-                  <span className="text-xs font-medium">Degens for Sale</span>
+                  <span className="hidden md:block text-xs font-medium">
+                    Degens listed
+                  </span>
+                  <span className="block md:hidden text-xs font-medium">
+                    # listed
+                  </span>
                   <span className="text-sm md:text-lg font-bold">
                     {metricsData.degensForSale.toLocaleString()}
                   </span>
@@ -294,11 +298,14 @@ const NFTTable: React.FC<NFTTableProps> = ({
                   className="h-12 bg-slate-500"
                 />
                 <div className="flex flex-col min-w-[60px]">
-                  <span className="text-xs font-medium">
+                  <span className="hidden md:block text-xs font-medium">
                     Total unclaimed NFTL
                   </span>
+                  <span className="block md:hidden text-xs font-medium">
+                    Unclaimed NFTL
+                  </span>
                   <span className="text-sm md:text-lg font-bold">
-                    {totalNFTL.toLocaleString()} NFTL
+                    {totalNFTL.toLocaleString()}
                   </span>
                 </div>
                 <Separator
@@ -306,8 +313,11 @@ const NFTTable: React.FC<NFTTableProps> = ({
                   className="h-12 bg-slate-500"
                 />
                 <div className="flex flex-col min-w-[60px]">
-                  <span className="text-xs font-medium">
+                  <span className="hidden md:block text-xs font-medium">
                     Highest Collection Offer
+                  </span>
+                  <span className="block md:hidden text-xs font-medium">
+                    Highest Offer
                   </span>
                   <span className="text-sm md:text-lg font-bold">
                     ${highestCollectionOfferInUSD.toLocaleString()}
@@ -341,7 +351,7 @@ const NFTTable: React.FC<NFTTableProps> = ({
               />
               NFTL to claim
             </label>
-            <div className="flex items-center justify-between gap-2 mb-8">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex w-full flex-col gap-2">
                 <span className="text-xs">Min</span>
                 <input
@@ -371,21 +381,13 @@ const NFTTable: React.FC<NFTTableProps> = ({
                 />
               </div>
             </div>
-            <Slider
-              defaultValue={nftlFilter}
-              max={maxNftl}
-              step={500}
-              value={nftlFilter}
-              onValueChange={setNftlFilter}
-              className="flex-1"
-            />
           </div>
           <Separator orientation="vertical" className="my-4 bg-slate-500" />
           <div className="flex flex-col gap-2  w-full  p-4">
-            <label className="text-sm font-medium mb-4">
+            <label className="text-sm h-[24px] font-medium mb-4">
               Price range (ETH)
             </label>
-            <div className="flex items-center justify-between gap-2 mb-8">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex w-full flex-col gap-2">
                 <span className="text-xs">Min</span>
                 <input
@@ -415,14 +417,6 @@ const NFTTable: React.FC<NFTTableProps> = ({
                 />
               </div>
             </div>
-            <Slider
-              defaultValue={priceFilter}
-              max={maxPrice}
-              step={0.01}
-              value={priceFilter}
-              onValueChange={setPriceFilter}
-              className="flex-1 "
-            />
           </div>
         </div>
         <Separator className="mb-8 bg-slate-500" />

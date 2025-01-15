@@ -55,7 +55,7 @@ export async function fetchReservoirListings(): Promise<NFT[]> {
   }
   const options = {
     method: "GET",
-    headers: { accept: "*/*", "x-api-key": apiKey },
+    headers: { accept: "*/*", "x-api-key": apiKey, cache: "no-store" },
   };
 
   const response = await fetch(
@@ -108,7 +108,7 @@ export async function fetchReservoirCollectionOffers(
   }
   const options = {
     method: "GET",
-    headers: { accept: "*/*", "x-api-key": apiKey },
+    headers: { accept: "*/*", "x-api-key": apiKey, cache: "no-store" },
   };
   const response = await fetch(
     `https://api.reservoir.tools/collections/${
@@ -132,7 +132,11 @@ export async function fetchNFTL(): Promise<number> {
   }
   const options = {
     method: "POST",
-    headers: { accept: "application/json", "content-type": "application/json" },
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      cache: "no-store",
+    },
     body: JSON.stringify({
       addresses: [
         {
